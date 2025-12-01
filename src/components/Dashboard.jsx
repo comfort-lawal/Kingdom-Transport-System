@@ -424,15 +424,14 @@ function ProfileEditModal({ isOpen, onClose, userProfile, onSave, loading }) {
   );
 }
 
-// Log Payment Modal - Each collaborator logs their ₦75,000 share
-function LogPaymentModal({ isOpen, onClose, onSubmit, currentWeek, loading, loggedWeeks, userDisplayName }) {
+// Log Payment Modal - Each collaborator logs their share
+function LogPaymentModal({ isOpen, onClose, onSubmit, currentWeek, loading, loggedWeeks, userDisplayName, expectedPayment }) {
   const [selectedWeek, setSelectedWeek] = useState(1);
-  const [amount, setAmount] = useState('75000');
+  const [amount, setAmount] = useState(expectedPayment?.toString() || '75000');
   const [note, setNote] = useState('');
-  const expectedAmount = 75000; // Each collaborator's share
 
   useEffect(() => {
-    setAmount('75000');
+    setAmount(expectedPayment?.toString() || '75000');
     // Find the first unlogged week for this user
     for (let w = 1; w <= currentWeek; w++) {
       if (!loggedWeeks.some(lw => lw.week === w && lw.user === userDisplayName)) {
@@ -440,7 +439,7 @@ function LogPaymentModal({ isOpen, onClose, onSubmit, currentWeek, loading, logg
         break;
       }
     }
-  }, [currentWeek, loggedWeeks, userDisplayName]);
+  }, [currentWeek, loggedWeeks, userDisplayName, expectedPayment]);
 
   if (!isOpen) return null;
 
@@ -480,8 +479,13 @@ function LogPaymentModal({ isOpen, onClose, onSubmit, currentWeek, loading, logg
         {/* Info Banner */}
         <div className="bg-primary-500/10 rounded-xl p-3 mb-4">
           <p className="text-primary-300 text-sm">
-            Each collaborator logs their own <strong>₦75,000</strong> share weekly.
+            Your expected weekly payment: <strong>₦{(expectedPayment || 75000).toLocaleString()}</strong>
           </p>
+          {expectedPayment > 75000 && (
+            <p className="text-gold-400 text-xs mt-1">
+              (₦75,000 base + ₦{(expectedPayment - 75000).toLocaleString()} from owned Kekes)
+            </p>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -517,7 +521,7 @@ function LogPaymentModal({ isOpen, onClose, onSubmit, currentWeek, loading, logg
               required
             />
             <p className="text-xs text-slate-500 mt-1">
-              Expected: ₦75,000 per collaborator
+              Expected: ₦{(expectedPayment || 75000).toLocaleString()}
             </p>
           </div>
 
@@ -555,9 +559,19 @@ function LogPaymentModal({ isOpen, onClose, onSubmit, currentWeek, loading, logg
   );
 }
 
-// Purchase Keke Modal
-function PurchaseKekeModal({ isOpen, onClose, onConfirm, kekeNumber, loading }) {
+// Purchase Keke Modal - With owner assignment
+function PurchaseKekeModal({ isOpen, onClose, onConfirm, kekeNumber, loading, nextOwner, collaborators }) {
+  const [selectedOwner, setSelectedOwner] = useState(nextOwner?.id || '');
+  
+  useEffect(() => {
+    if (nextOwner) {
+      setSelectedOwner(nextOwner.id);
+    }
+  }, [nextOwner]);
+
   if (!isOpen) return null;
+
+  const selectedCollab = collaborators?.find(c => c.id === selectedOwner);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
@@ -567,21 +581,44 @@ function PurchaseKekeModal({ isOpen, onClose, onConfirm, kekeNumber, loading }) 
             <span className="text-4xl">🛺</span>
           </div>
           <h3 className="font-display text-xl font-bold text-white">
-            Purchase Keke #{kekeNumber}?
+            Purchase Keke #{kekeNumber}
           </h3>
           <p className="text-slate-400 mt-2">
-            This will deduct {formatCurrency(INVESTMENT_CONFIG.NEW_KEKE_COST)} from your savings
+            This will deduct ₦5,000,000 from savings
+          </p>
+        </div>
+
+        {/* Owner Selection */}
+        <div className="mb-4">
+          <label className="block text-sm text-slate-400 mb-2">Assign to Collaborator (Rotation)</label>
+          <select
+            value={selectedOwner}
+            onChange={(e) => setSelectedOwner(e.target.value)}
+            className="w-full bg-dark-200 border border-slate-700 rounded-xl py-3 px-4 text-white focus:border-primary-500 transition-colors"
+          >
+            {collaborators?.map((collab) => (
+              <option key={collab.id} value={collab.id}>
+                {collab.name} {collab.id === nextOwner?.id ? '(Next in rotation)' : ''}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-primary-400 mt-1">
+            {selectedCollab?.name} will pay ₦125,000/week for this Keke
           </p>
         </div>
 
         <div className="bg-dark-200 rounded-xl p-4 mb-6">
           <div className="flex justify-between text-sm mb-2">
             <span className="text-slate-400">Weekly Return:</span>
-            <span className="text-primary-400 font-medium">{formatCurrency(INVESTMENT_CONFIG.NEW_KEKE_WEEKLY)}</span>
+            <span className="text-primary-400 font-medium">₦125,000</span>
+          </div>
+          <div className="flex justify-between text-sm mb-2">
+            <span className="text-slate-400">Duration:</span>
+            <span className="text-white">52 weeks</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-slate-400">Duration:</span>
-            <span className="text-white">{INVESTMENT_CONFIG.NEW_KEKE_DURATION} weeks</span>
+            <span className="text-slate-400">Assigned to:</span>
+            <span className="text-gold-400 font-medium">{selectedCollab?.name || 'Select owner'}</span>
           </div>
         </div>
 
@@ -593,8 +630,8 @@ function PurchaseKekeModal({ isOpen, onClose, onConfirm, kekeNumber, loading }) 
             Cancel
           </button>
           <button
-            onClick={onConfirm}
-            disabled={loading}
+            onClick={() => onConfirm(selectedOwner)}
+            disabled={loading || !selectedOwner}
             className="flex-1 btn-primary py-3 rounded-xl font-semibold text-white flex items-center justify-center gap-2"
           >
             {loading ? <Loader2 className="w-5 h-5 spinner" /> : <Plus className="w-5 h-5" />}
@@ -696,14 +733,22 @@ function TimelineItem({ keke, isLast, currentWeek }) {
           </span>
         </div>
         
+        {/* Owner badge for new Kekes */}
+        {!isOriginal && keke.ownerName && (
+          <div className="mb-2 inline-flex items-center gap-1 px-2 py-1 bg-gold-500/20 text-gold-400 rounded-full text-xs">
+            <span>👤</span>
+            <span>Owned by {keke.ownerName}</span>
+          </div>
+        )}
+        
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div>
             <span className="text-slate-500">Type</span>
-            <p className="text-slate-300">{isOriginal ? 'Original' : 'New'}</p>
+            <p className="text-slate-300">{isOriginal ? 'Original (Shared)' : 'New (Assigned)'}</p>
           </div>
           <div>
             <span className="text-slate-500">Weekly Return</span>
-            <p className="text-primary-400 font-medium">{formatCurrency(keke.weeklyReturn)}</p>
+            <p className="text-primary-400 font-medium">₦{keke.weeklyReturn?.toLocaleString()}</p>
           </div>
           <div>
             <span className="text-slate-500">Purchased</span>
@@ -805,7 +850,9 @@ export default function Dashboard() {
     isHolidayWeek,
     logPayment,
     purchaseKeke,
-    deletePayment
+    deletePayment,
+    getNextKekeOwner,
+    calculateCollaboratorPayments
   } = useInvestment();
   
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -824,6 +871,12 @@ export default function Dashboard() {
   const canPurchase = investmentStats.cumulativeSavings >= config.NEW_KEKE_COST;
   const displayedPayments = showAllPayments ? payments : payments.slice(0, 5);
   const userIsAdmin = isAdmin();
+  
+  // Get next owner for Keke purchase rotation
+  const nextKekeOwner = getNextKekeOwner();
+  
+  // Get each collaborator's payment breakdown
+  const collaboratorPayments = calculateCollaboratorPayments();
 
   // Get list of weeks that have been logged (with user info)
   const loggedWeeks = payments
@@ -844,10 +897,10 @@ export default function Dashboard() {
     setActionLoading(false);
   };
 
-  const handlePurchaseKeke = async () => {
+  const handlePurchaseKeke = async (ownerId) => {
     setActionLoading(true);
     try {
-      await purchaseKeke(userProfile?.displayName || currentUser?.email);
+      await purchaseKeke(userProfile?.displayName || currentUser?.email, ownerId);
       setShowPurchaseModal(false);
     } catch (error) {
       console.error('Error purchasing keke:', error);
@@ -1223,42 +1276,80 @@ export default function Dashboard() {
               )}
             </div>
 
-            {/* Collaborators Card - Shows who has logged for current week */}
+            {/* Collaborators Card - Shows ownership and payment status */}
             <div className="glass-card rounded-2xl p-6">
               <h2 className="font-display text-xl font-bold text-white mb-4 flex items-center gap-2">
                 <Users className="w-5 h-5 text-primary-400" />
-                Week {currentWeek} Payment Status
+                Collaborators & Ownership
               </h2>
               
-              {/* Current Week Status */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                {[
-                  { name: 'A.S.O', initial: 'A', gradient: 'from-primary-500 to-gold-500' },
-                  { name: 'Dr. Dayo', initial: 'D', gradient: 'from-blue-500 to-purple-500' },
-                  { name: 'Dr. Itunu', initial: 'I', gradient: 'from-pink-500 to-rose-500' },
-                  { name: 'Dr. Fadeke', initial: 'F', gradient: 'from-teal-500 to-emerald-500' },
-                ].map((collab) => {
-                  // Check if this collaborator has logged for current week
+              {/* Collaborator Cards with Ownership */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                {config.COLLABORATORS.map((collab) => {
+                  const paymentInfo = collaboratorPayments[collab.id];
                   const hasLoggedThisWeek = payments.some(
                     p => p.weekNumber === currentWeek && 
                     p.loggedBy?.toLowerCase().includes(collab.name.toLowerCase().split(' ').pop()) &&
                     !p.isPurchase
                   );
+                  const isNextForPurchase = nextKekeOwner?.id === collab.id;
                   
                   return (
-                    <div key={collab.name} className={`rounded-xl p-4 text-center ${hasLoggedThisWeek ? 'bg-primary-500/20 border border-primary-500/30' : 'bg-dark-200'}`}>
-                      <div className={`w-12 h-12 mx-auto rounded-full bg-gradient-to-br ${collab.gradient} flex items-center justify-center text-white font-bold mb-3 relative`}>
-                        {collab.initial}
-                        {hasLoggedThisWeek && (
-                          <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-primary-500 rounded-full flex items-center justify-center">
-                            <CheckCircle className="w-3 h-3 text-white" />
+                    <div key={collab.id} className={`rounded-xl p-4 ${hasLoggedThisWeek ? 'bg-primary-500/10 border border-primary-500/30' : 'bg-dark-200'}`}>
+                      <div className="flex items-start gap-3">
+                        <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${collab.gradient} flex items-center justify-center text-white font-bold relative flex-shrink-0`}>
+                          {collab.initial}
+                          {hasLoggedThisWeek && (
+                            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-primary-500 rounded-full flex items-center justify-center">
+                              <CheckCircle className="w-3 h-3 text-white" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="text-white font-medium truncate">{collab.name}</p>
+                            {isNextForPurchase && canPurchase && (
+                              <span className="px-2 py-0.5 bg-gold-500/20 text-gold-400 text-xs rounded-full whitespace-nowrap">
+                                Next Owner
+                              </span>
+                            )}
                           </div>
-                        )}
+                          
+                          {/* Owned Kekes */}
+                          {paymentInfo?.ownedKekes?.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mb-2">
+                              {paymentInfo.ownedKekes.map(kekeId => (
+                                <span key={kekeId} className="px-2 py-0.5 bg-gold-500/20 text-gold-300 text-xs rounded">
+                                  🛺 Keke #{kekeId}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          
+                          {/* Payment Breakdown */}
+                          <div className="text-xs text-slate-400 space-y-0.5">
+                            <div className="flex justify-between">
+                              <span>Base (shared):</span>
+                              <span>₦{(paymentInfo?.basePayment || 75000).toLocaleString()}</span>
+                            </div>
+                            {paymentInfo?.newKekePayment > 0 && (
+                              <div className="flex justify-between text-gold-400">
+                                <span>Owned Kekes:</span>
+                                <span>₦{paymentInfo.newKekePayment.toLocaleString()}</span>
+                              </div>
+                            )}
+                            <div className="flex justify-between font-semibold text-white pt-1 border-t border-white/10">
+                              <span>Weekly Total:</span>
+                              <span className="text-primary-400">₦{(paymentInfo?.totalPayment || 75000).toLocaleString()}</span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-slate-400 text-sm mb-1">{collab.name}</p>
-                      <p className={`text-sm font-medium ${hasLoggedThisWeek ? 'text-primary-400' : 'text-slate-500'}`}>
-                        {hasLoggedThisWeek ? '✓ Paid ₦75,000' : 'Pending'}
-                      </p>
+                      
+                      {/* Week Status */}
+                      <div className={`mt-3 pt-2 border-t border-white/10 text-center text-sm ${hasLoggedThisWeek ? 'text-primary-400' : 'text-slate-500'}`}>
+                        {hasLoggedThisWeek ? '✓ Week ' + currentWeek + ' Paid' : '○ Week ' + currentWeek + ' Pending'}
+                      </div>
                     </div>
                   );
                 })}
@@ -1270,8 +1361,10 @@ export default function Dashboard() {
                   <span className="text-slate-400 text-sm">Week {currentWeek} Collection:</span>
                   <span className="text-white font-semibold">
                     ₦{new Intl.NumberFormat('en-NG').format(
-                      payments.filter(p => p.weekNumber === currentWeek && !p.isPurchase).reduce((sum, p) => sum + p.amount, 0)
-                    )} / ₦300,000
+                      payments.filter(p => p.weekNumber === currentWeek && !p.isPurchase && p.amount > 0).reduce((sum, p) => sum + p.amount, 0)
+                    )} / ₦{new Intl.NumberFormat('en-NG').format(
+                      Object.values(collaboratorPayments).reduce((sum, cp) => sum + (cp?.totalPayment || 75000), 0)
+                    )}
                   </span>
                 </div>
                 <div className="w-full bg-dark-300 rounded-full h-2">
@@ -1279,7 +1372,8 @@ export default function Dashboard() {
                     className="h-full rounded-full bg-gradient-to-r from-primary-500 to-gold-500 transition-all duration-500"
                     style={{ 
                       width: `${Math.min(
-                        (payments.filter(p => p.weekNumber === currentWeek && !p.isPurchase).reduce((sum, p) => sum + p.amount, 0) / 300000) * 100, 
+                        (payments.filter(p => p.weekNumber === currentWeek && !p.isPurchase && p.amount > 0).reduce((sum, p) => sum + p.amount, 0) / 
+                        Object.values(collaboratorPayments).reduce((sum, cp) => sum + (cp?.totalPayment || 75000), 0)) * 100, 
                         100
                       )}%` 
                     }}
@@ -1287,16 +1381,18 @@ export default function Dashboard() {
                 </div>
               </div>
               
-              {/* Income Summary */}
-              <div className="pt-4 border-t border-white/10 space-y-3">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-400">Each collaborator contributes:</span>
-                  <span className="text-primary-400 font-semibold">₦75,000/week</span>
+              {/* Rotation Info */}
+              {canPurchase && nextKekeOwner && (
+                <div className="bg-gold-500/10 rounded-xl p-4 mb-4">
+                  <p className="text-gold-400 text-sm font-medium flex items-center gap-2">
+                    <span>🛺</span>
+                    Next Keke (#{kekes.length + 1}) will be assigned to: <strong>{nextKekeOwner.name}</strong>
+                  </p>
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-400">Combined weekly total:</span>
-                  <span className="text-white font-semibold">₦300,000/week</span>
-                </div>
+              )}
+              
+              {/* Goal Summary */}
+              <div className="pt-4 border-t border-white/10 space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-slate-400">When 12 Kekes achieved:</span>
                   <span className="text-gold-400 font-semibold">
@@ -1356,6 +1452,17 @@ export default function Dashboard() {
         loading={actionLoading}
         loggedWeeks={loggedWeeks}
         userDisplayName={userProfile?.displayName || currentUser?.email}
+        expectedPayment={(() => {
+          // Try to match current user to a collaborator to get their expected payment
+          const userName = (userProfile?.displayName || '').toLowerCase();
+          for (const collab of config.COLLABORATORS) {
+            const collabKey = collab.name.toLowerCase().split(' ').pop(); // Get last word (e.g., "dayo", "itunu")
+            if (userName.includes(collabKey) || userName.includes(collab.id)) {
+              return collaboratorPayments[collab.id]?.totalPayment || 75000;
+            }
+          }
+          return 75000; // Default base payment
+        })()}
       />
 
       <PurchaseKekeModal
@@ -1364,6 +1471,8 @@ export default function Dashboard() {
         onConfirm={handlePurchaseKeke}
         kekeNumber={kekes.length + 1}
         loading={actionLoading}
+        nextOwner={nextKekeOwner}
+        collaborators={config.COLLABORATORS}
       />
 
       <ProfileEditModal

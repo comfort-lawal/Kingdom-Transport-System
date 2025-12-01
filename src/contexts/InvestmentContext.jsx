@@ -30,11 +30,15 @@ export const INVESTMENT_CONFIG = {
   TARGET_KEKES: 12,
   NUM_COLLABORATORS: 4,
   START_DATE: new Date('2025-10-20'),
-  // Each collaborator's share per Keke per week
-  COLLABORATOR_SHARE_OLD: 75000 / 4, // ₦18,750 per person per original Keke
-  COLLABORATOR_SHARE_NEW: 125000 / 4, // ₦31,250 per person per new Keke
-  // Weekly payment each collaborator should log (with 4 original Kekes)
-  WEEKLY_PAYMENT_PER_PERSON: 75000, // Each person logs ₦75,000
+  // Each collaborator's base share for original Kekes
+  BASE_WEEKLY_PAYMENT: 75000,
+  // Collaborators in rotation order for Keke assignment
+  COLLABORATORS: [
+    { id: 'aso', name: 'A.S.O', initial: 'A', gradient: 'from-primary-500 to-gold-500' },
+    { id: 'dayo', name: 'Dr. Dayo', initial: 'D', gradient: 'from-blue-500 to-purple-500' },
+    { id: 'itunu', name: 'Dr. Itunu', initial: 'I', gradient: 'from-pink-500 to-rose-500' },
+    { id: 'fadeke', name: 'Dr. Fadeke', initial: 'F', gradient: 'from-teal-500 to-emerald-500' },
+  ],
 };
 
 // Holiday weeks (week numbers from start date)
@@ -209,13 +213,39 @@ export function InvestmentProvider({ children }) {
     });
   }
 
-  // Purchase new keke
-  async function purchaseKeke(purchasedBy) {
+  // Get next owner in rotation for new Keke
+  function getNextKekeOwner() {
+    // Count how many new Kekes each collaborator owns
+    const newKekes = kekes.filter(k => k.type === 'New');
+    const ownershipCount = {};
+    
+    INVESTMENT_CONFIG.COLLABORATORS.forEach(c => {
+      ownershipCount[c.id] = 0;
+    });
+    
+    newKekes.forEach(k => {
+      if (k.ownerId && ownershipCount[k.ownerId] !== undefined) {
+        ownershipCount[k.ownerId]++;
+      }
+    });
+    
+    // Find the collaborator with the least Kekes (in rotation order)
+    const minCount = Math.min(...Object.values(ownershipCount));
+    const nextOwner = INVESTMENT_CONFIG.COLLABORATORS.find(c => ownershipCount[c.id] === minCount);
+    
+    return nextOwner;
+  }
+
+  // Purchase new keke with owner assignment
+  async function purchaseKeke(purchasedBy, ownerId) {
     const newKekeId = kekes.length + 1;
     const currentWeek = getCurrentWeekNumber();
     const expiryWeek = calculateExpiryWeek(currentWeek, INVESTMENT_CONFIG.NEW_KEKE_DURATION);
     
-    // Add new keke
+    // Find owner details
+    const owner = INVESTMENT_CONFIG.COLLABORATORS.find(c => c.id === ownerId);
+    
+    // Add new keke with owner
     await setDoc(doc(db, 'kekes', `keke-${newKekeId}`), {
       id: newKekeId,
       type: 'New',
@@ -225,7 +255,9 @@ export function InvestmentProvider({ children }) {
       earningDuration: INVESTMENT_CONFIG.NEW_KEKE_DURATION,
       expiryWeek: expiryWeek,
       cost: INVESTMENT_CONFIG.NEW_KEKE_COST,
-      status: 'active'
+      status: 'active',
+      ownerId: ownerId,
+      ownerName: owner?.name || 'Unknown'
     });
 
     // Log the purchase as a negative payment
@@ -235,11 +267,42 @@ export function InvestmentProvider({ children }) {
       weekStartDate: new Date().toISOString(),
       loggedBy: purchasedBy,
       loggedAt: new Date().toISOString(),
-      note: `Purchased Keke #${newKekeId}`,
+      note: `Purchased Keke #${newKekeId} for ${owner?.name || 'Unknown'}`,
       isHoliday: false,
       isPurchase: true,
-      kekeId: newKekeId
+      kekeId: newKekeId,
+      ownerId: ownerId
     });
+  }
+
+  // Calculate each collaborator's weekly payment based on owned Kekes
+  function calculateCollaboratorPayments() {
+    const currentWeek = getCurrentWeekNumber();
+    const payments = {};
+    
+    // Initialize all collaborators with base payment (for original Kekes)
+    INVESTMENT_CONFIG.COLLABORATORS.forEach(c => {
+      payments[c.id] = {
+        ...c,
+        basePayment: INVESTMENT_CONFIG.BASE_WEEKLY_PAYMENT,
+        newKekePayment: 0,
+        totalPayment: INVESTMENT_CONFIG.BASE_WEEKLY_PAYMENT,
+        ownedKekes: []
+      };
+    });
+    
+    // Add payments for owned new Kekes
+    kekes.forEach(k => {
+      if (k.type === 'New' && k.ownerId && k.expiryWeek >= currentWeek) {
+        if (payments[k.ownerId]) {
+          payments[k.ownerId].newKekePayment += INVESTMENT_CONFIG.NEW_KEKE_WEEKLY;
+          payments[k.ownerId].totalPayment += INVESTMENT_CONFIG.NEW_KEKE_WEEKLY;
+          payments[k.ownerId].ownedKekes.push(k.id);
+        }
+      }
+    });
+    
+    return payments;
   }
 
   // Delete a payment (admin only)
@@ -264,6 +327,8 @@ export function InvestmentProvider({ children }) {
     purchaseKeke,
     deletePayment,
     editPayment,
+    getNextKekeOwner,
+    calculateCollaboratorPayments,
     config: INVESTMENT_CONFIG,
     getCurrentWeekNumber,
     isHolidayWeek,
