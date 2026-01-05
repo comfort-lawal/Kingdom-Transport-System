@@ -42,7 +42,7 @@ export const INVESTMENT_CONFIG = {
 };
 
 // Holiday weeks (week numbers from start date)
-const HOLIDAY_WEEK_NUMBERS = [10, 11, 62, 63, 114, 115];
+const HOLIDAY_WEEK_NUMBERS = [10, 11, 12, 62, 63, 64, 114, 115, 116];
 
 export function isHolidayWeek(weekNum) {
   return HOLIDAY_WEEK_NUMBERS.includes(weekNum);
