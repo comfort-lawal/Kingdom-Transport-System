@@ -882,6 +882,14 @@ export default function Dashboard() {
   const loggedWeeks = payments
     .filter(p => !p.isPurchase && p.amount > 0)
     .map(p => ({ week: p.weekNumber, user: p.loggedBy }));
+
+    // Calculate weeks that need logging (excluding holiday weeks)
+  const weeksToLog = [];
+  for (let w = 1; w <= currentWeek; w++) {
+    if (!isHolidayWeek(w) && !loggedWeeks.includes(w)) {
+      weeksToLog.push(w);
+    }
+  }
   
   // Get unique week numbers for the unlogged weeks banner
   const loggedWeekNumbers = [...new Set(loggedWeeks.map(lw => lw.week))];
