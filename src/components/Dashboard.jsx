@@ -432,10 +432,8 @@ function LogPaymentModal({ isOpen, onClose, onSubmit, currentWeek, loading, logg
 
   useEffect(() => {
     setAmount(expectedPayment?.toString() || '75000');
-    //Find the first unlogged week for this user (excluding holidays)
-    const holidayWeeks = [10, 11, 12, 62, 63, 64, 114, 115, 116];
+    // Find the first unlogged week for this user
     for (let w = 1; w <= currentWeek; w++) {
-      if (holidayWeeks.includes(w)) continue; // Skip holiday weeks
       if (!loggedWeeks.some(lw => lw.week === w && lw.user === userDisplayName)) {
         setSelectedWeek(w);
         break;
@@ -450,11 +448,9 @@ function LogPaymentModal({ isOpen, onClose, onSubmit, currentWeek, loading, logg
     onSubmit(selectedWeek, parseInt(amount), note);
   };
 
-  // Generate week options from week 1 to current week ONLY (no future weeks, no holidays)
-  const holidayWeeks = [10, 11, 12, 62, 63, 64, 114, 115, 116];
+  // Generate week options from week 1 to current week ONLY (no future weeks)
   const weekOptions = [];
   for (let w = 1; w <= currentWeek; w++) {
-    if (holidayWeeks.includes(w)) continue; // Skip holiday weeks
     // Check if THIS USER already logged for this week
     const userLoggedThisWeek = loggedWeeks.some(lw => lw.week === w && lw.user === userDisplayName);
     weekOptions.push({ week: w, isLogged: userLoggedThisWeek });
@@ -875,7 +871,6 @@ export default function Dashboard() {
   const canPurchase = investmentStats.cumulativeSavings >= config.NEW_KEKE_COST;
   const displayedPayments = showAllPayments ? payments : payments.slice(0, 5);
   const userIsAdmin = isAdmin();
-  const hasLoggedCurrentWeek = loggedWeeks.some(lw => lw.week === currentWeek && lw.user === (userProfile?.displayName || currentUser?.email));
   
   // Get next owner for Keke purchase rotation
   const nextKekeOwner = getNextKekeOwner();
@@ -1094,7 +1089,7 @@ export default function Dashboard() {
             )}
           </div>
           
-          {!isCurrentHoliday && !loggedWeeks.some(lw => lw.week === currentWeek && lw.user === (userProfile?.displayName || currentUser?.email)) && (
+          {!isCurrentHoliday && (
             <button
               onClick={() => setShowPaymentModal(true)}
               className="btn-primary px-4 py-2 rounded-xl font-medium text-white flex items-center justify-center gap-2"
