@@ -449,8 +449,10 @@ function LogPaymentModal({ isOpen, onClose, onSubmit, currentWeek, loading, logg
   };
 
   // Generate week options from week 1 to current week ONLY (no future weeks)
+  const holidayWeeks = [10, 11, 12, 62, 63, 64, 114, 115, 116];
   const weekOptions = [];
   for (let w = 1; w <= currentWeek; w++) {
+    if (holidayWeeks.includes(w)) continue;
     // Check if THIS USER already logged for this week
     const userLoggedThisWeek = loggedWeeks.some(lw => lw.week === w && lw.user === userDisplayName);
     weekOptions.push({ week: w, isLogged: userLoggedThisWeek });
