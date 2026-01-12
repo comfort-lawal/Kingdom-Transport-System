@@ -1091,7 +1091,11 @@ export default function Dashboard() {
             )}
           </div>
           
-          {!isCurrentHoliday && (
+          {!isCurrentHoliday && (() => {
+            const userName = userProfile?.displayName || currentUser?.email;
+            const hasLoggedCurrentWeek = loggedWeeks.some(lw => lw.week === currentWeek && lw.user === userName);
+            if (hasLoggedCurrentWeek) return null;
+            return (
             <button
               onClick={() => setShowPaymentModal(true)}
               className="btn-primary px-4 py-2 rounded-xl font-medium text-white flex items-center justify-center gap-2"
@@ -1099,8 +1103,9 @@ export default function Dashboard() {
               <Plus className="w-4 h-4" />
               Log Payment
             </button>
+          );
+        })()}
             
-          )}
         </div>
 
         {/* Unlogged Weeks Banner - Show weeks where current user hasn't logged */}
