@@ -1097,6 +1097,7 @@ export default function Dashboard() {
               <Plus className="w-4 h-4" />
               Log Payment
             </button>
+            
           )}
         </div>
 
@@ -1105,7 +1106,7 @@ export default function Dashboard() {
           const userUnloggedWeeks = [];
           const userName = userProfile?.displayName || currentUser?.email;
           for (let w = 1; w <= currentWeek; w++) {
-            if (!loggedWeeks.some(lw => lw.week === w && lw.user === userName)) {
+            if (!isHolidayWeek(w) && !loggedWeeks.some(lw => lw.week === w && lw.user === userName)) {
               userUnloggedWeeks.push(w);
             }
           }
@@ -1356,7 +1357,7 @@ export default function Dashboard() {
                       
                       {/* Week Status */}
                       <div className={`mt-3 pt-2 border-t border-white/10 text-center text-sm ${hasLoggedThisWeek ? 'text-primary-400' : 'text-slate-500'}`}>
-                        {hasLoggedThisWeek ? '✓ Week ' + currentWeek + ' Paid' : '○ Week ' + currentWeek + ' Pending'}
+                        {isHolidayWeek(currentWeek) ? '🎄 Holiday Week' : (hasLoggedThisWeek ? '✓ Week ' + currentWeek + ' Paid' : '○ Week ' + currentWeek + ' Pending')}
                       </div>
                     </div>
                   );
