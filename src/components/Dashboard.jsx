@@ -586,7 +586,7 @@ function PurchaseKekeModal({ isOpen, onClose, onConfirm, kekeNumber, loading, ne
             Purchase Keke #{kekeNumber}
           </h3>
           <p className="text-slate-400 mt-2">
-            This will deduct ₦5,000,000 from savings
+            This will deduct ₦4,000,000 from savings
           </p>
         </div>
 
