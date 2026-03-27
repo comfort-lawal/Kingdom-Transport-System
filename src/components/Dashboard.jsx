@@ -7,6 +7,7 @@ import TransferHistory from './TransferHistory';
 import AdminVerification from './AdminVerification';
 import RotationTimeline from './RotationTimeline';
 import WeeklyStatus from './WeeklyStatus';
+import WeeklyChecklist from './WeeklyChecklist';
 import Notifications from './Notifications';
 import { Plus, LogOut, Truck, ShieldCheck } from 'lucide-react';
 
@@ -18,10 +19,7 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <Truck className="w-10 h-10 text-kingdom-green mx-auto mb-3 animate-pulse" />
-          <p className="text-gray-400">Loading...</p>
-        </div>
+        <Truck className="w-10 h-10 text-kingdom-green mx-auto mb-3 animate-pulse" />
       </div>
     );
   }
@@ -30,7 +28,6 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen pb-24">
-      {/* Header */}
       <header className="sticky top-0 z-40 bg-kingdom-dark/90 backdrop-blur-lg border-b border-white/5">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -54,41 +51,25 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* Main content */}
       <main className="max-w-lg mx-auto px-4 py-4 space-y-4">
-        {/* 1. Current beneficiary + progress + bank details */}
         <BeneficiaryCard />
-
-        {/* 2. Weekly status */}
         <WeeklyStatus />
-
-        {/* 3. Admin verification panel (only for admin) */}
         <AdminVerification />
-
-        {/* 4. Transfer history */}
+        <WeeklyChecklist />
         <TransferHistory />
-
-        {/* 5. Rotation timeline */}
         <RotationTimeline />
       </main>
 
-      {/* Floating action button — Log Transfer */}
       {beneficiary && (
         <div className="fixed bottom-6 left-0 right-0 flex justify-center z-30">
-          <button
-            onClick={() => setShowTransferForm(true)}
-            className="btn-primary px-6 py-3 rounded-2xl text-white font-semibold flex items-center gap-2 shadow-lg shadow-kingdom-green/20"
-          >
-            <Plus className="w-5 h-5" />
-            Log transfer
+          <button onClick={() => setShowTransferForm(true)}
+            className="btn-primary px-6 py-3 rounded-2xl text-white font-semibold flex items-center gap-2 shadow-lg shadow-kingdom-green/20">
+            <Plus className="w-5 h-5" /> Log transfer
           </button>
         </div>
       )}
 
-      {/* Transfer form modal */}
-      {showTransferForm && (
-        <TransferForm onClose={() => setShowTransferForm(false)} />
-      )}
+      {showTransferForm && <TransferForm onClose={() => setShowTransferForm(false)} />}
     </div>
   );
 }
