@@ -1,303 +1,109 @@
-# 🛺 Keke Investment Collaboration Dashboard
+# Kingdom Transport System v4.0
 
-A modern, real-time dashboard for tracking your Keke investment collaboration. Built with React, Firebase, and Tailwind CSS.
+Investment collaboration tracking with real money flow — beneficiary accounts, transfer logging, admin verification, and purchase confirmation.
 
-![Dashboard Preview](preview.png)
+## What's New in v4
 
-## Features
+1. **Beneficiary System** — Shows whose turn it is to receive funds, with their bank details
+2. **Transfer Logging** — Any collaborator can log their weekly transfer
+3. **Admin Verification** — Admin approves or rejects each transfer
+4. **Progress Tracking** — Live progress ring showing verified amount toward ₦4M
+5. **Purchase Confirmation** — Admin confirms when target is reached; system auto-advances
+6. **Notifications** — Real-time alerts for all actions
 
-- ✅ **Real-time Updates** - See changes instantly across all devices
-- 📊 **Progress Ring** - Visual progress toward next Keke purchase
-- ⏱️ **Live Countdown** - Time remaining until next purchase
-- 👥 **Collaborator Breakdown** - Individual share calculations
-- 📱 **Mobile Responsive** - Works perfectly on all devices
-- 🔐 **Secure Authentication** - Login for each collaborator
-- 📈 **Keke Timeline** - Track all purchases and their status
+## Setup Instructions
 
----
+### Step 1: Firebase Configuration
 
-## 🚀 Quick Setup Guide
+You already have a Firebase project from the original app. You need to add your config:
 
-### Step 1: Create Firebase Project (Free)
+1. Go to [Firebase Console](https://console.firebase.google.com)
+2. Select your project
+3. Click the **gear icon** → **Project settings**
+4. Scroll to "Your apps" → Click your web app
+5. Copy the `firebaseConfig` object
+6. Open `src/config/firebase.js` and paste your config values
 
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Click **"Create a project"**
-3. Enter project name: `keke-collaboration` (or any name)
-4. Disable Google Analytics (optional, not needed)
-5. Click **Create project**
+### Step 2: Firestore Indexes
 
-### Step 2: Enable Authentication
+The app uses compound queries that need indexes. **Two options:**
 
-1. In Firebase Console, click **Authentication** (left sidebar)
-2. Click **Get started**
-3. Click **Email/Password**
-4. Toggle **Enable** to ON
-5. Click **Save**
+**Option A (Automatic):** When you first load the app and see an error in browser console about missing indexes, Firebase will include a direct link to create them. Just click each link.
 
-### Step 3: Create Firestore Database
+**Option B (Manual):** In Firebase Console → Firestore → Indexes → Add these:
 
-1. Click **Firestore Database** (left sidebar)
-2. Click **Create database**
-3. Select **Start in test mode** (we'll secure it later)
-4. Choose a location closest to Nigeria (e.g., `eur3` or `europe-west1`)
-5. Click **Enable**
+| Collection | Fields |
+|-----------|--------|
+| `transfers` | `kekeNumber` (Asc) + `createdAt` (Desc) |
+| `notifications` | `userId` (Asc) + `createdAt` (Desc) |
 
-### Step 4: Register Web App
+### Step 3: Firestore Security Rules
 
-1. In Project Overview, click the **Web icon** `</>`
-2. Enter app nickname: `keke-dashboard`
-3. ✅ Check "Also set up Firebase Hosting" (optional but recommended)
-4. Click **Register app**
-5. **COPY the firebaseConfig object** - you'll need this!
+1. Go to Firebase Console → Firestore → **Rules** tab
+2. Replace all content with the contents of `firestore.rules`
+3. Click **Publish**
 
-It looks like this:
-```javascript
-const firebaseConfig = {
-  apiKey: "AIzaSy.....................",
-  authDomain: "your-project.firebaseapp.com",
-  projectId: "your-project-id",
-  storageBucket: "your-project.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abc123..."
-};
-```
-
-### Step 5: Configure Your App
-
-1. Open `src/config/firebase.js`
-2. Replace the placeholder config with YOUR values from Step 4:
-
-```javascript
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
-};
-```
-
-### Step 6: Secure Your Database
-
-In Firebase Console → Firestore → Rules, replace with:
-
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Users can read/write their own profile
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // All authenticated users can read/write kekes and payments
-    match /kekes/{document=**} {
-      allow read, write: if request.auth != null;
-    }
-    
-    match /payments/{document=**} {
-      allow read, write: if request.auth != null;
-    }
-  }
-}
-```
-
-Click **Publish**.
-
----
-
-## 💻 Local Development
-
-### Prerequisites
-- Node.js 18+ installed ([Download](https://nodejs.org/))
-
-### Install & Run
+### Step 4: Install and Build
 
 ```bash
-# Navigate to project folder
-cd keke-dashboard
-
-# Install dependencies
+cd kingdom-transport
 npm install
-
-# Start development server
-npm run dev
-```
-
-Open [http://localhost:5173](http://localhost:5173) in your browser.
-
----
-
-## 🌐 Deploy to Netlify (Free)
-
-### Option A: Netlify CLI (Recommended)
-
-```bash
-# Install Netlify CLI
-npm install -g netlify-cli
-
-# Build the project
 npm run build
-
-# Deploy
-netlify deploy --prod --dir=dist
 ```
 
-### Option B: Netlify Web Interface
+### Step 5: Deploy
 
-1. Build your project:
-   ```bash
-   npm run build
-   ```
+**If using Netlify (linked to GitHub):**
+1. Replace the files in your `Kingdom-Transport-System` GitHub repo with these new files
+2. Commit and push
+3. Netlify auto-deploys
 
-2. Go to [Netlify](https://app.netlify.com/)
-3. Sign up/Login with GitHub
-4. Drag and drop the `dist` folder to deploy
+**If manually deploying:**
+1. Go to [Netlify](https://app.netlify.com)
+2. Select your kingdom-colab site
+3. Drag the `dist` folder to deploy
 
-### Option C: Connect GitHub Repository
+## Important Notes
 
-1. Push your code to GitHub
-2. Go to [Netlify](https://app.netlify.com/)
-3. Click **"Add new site"** → **"Import an existing project"**
-4. Connect your GitHub repo
-5. Set build settings:
-   - Build command: `npm run build`
-   - Publish directory: `dist`
-6. Click **Deploy**
+- **Admin account:** oluwaselawal@gmail.com (A.S.O) has admin privileges
+- **Rotation order:** Fadeke → A.S.O → Itunu → Dayo (repeating)
+- **Bank details:** Admin must set the beneficiary's bank details before others can transfer
+- **First run:** The app seeds the rotation data automatically on first load
 
----
-
-## 👥 Adding Collaborators
-
-1. Share the deployed URL with your 4 collaborators
-2. Each person clicks **"Sign up"**
-3. They enter their name, email, and password
-4. Once logged in, they can view the dashboard
-
----
-
-## 📊 How It Works
-
-### Investment Parameters (Pre-configured)
+## Current Investment Status
 
 | Parameter | Value |
 |-----------|-------|
-| Original Kekes (1-4) | ₦75,000/week for 75 weeks |
-| New Kekes (5+) | ₦125,000/week for 52 weeks |
-| New Keke Cost | ₦5,000,000 |
-| Target | 12 Active Kekes |
-| Collaborators | 4 people |
 | Start Date | October 20, 2025 |
-| Holiday Weeks | Christmas & New Year (no returns) |
+| Original Kekes | 4 (₦75k/week each) |
+| New Keke Cost | ₦4,000,000 |
+| New Keke ROI | ₦125k/week for 52 weeks |
+| ROI Gap | 2 weeks after purchase |
+| Target | 12 kekes total |
+| Keke #5 | Dr. Fadeke (Purchased Mar 2) |
+| Keke #6 | A.S.O (Currently saving) |
 
-### Dashboard Shows
+## File Structure
 
-- **Progress Ring**: Visual % toward next ₦5M
-- **Countdown Timer**: Estimated time to next purchase
-- **Weekly Income**: Current total from all active Kekes
-- **Your Share**: Your weekly portion (total ÷ 4)
-- **Keke Timeline**: All Kekes with purchase/expiry dates
-
----
-
-## 🔧 Customization
-
-### Change Investment Parameters
-
-Edit `src/contexts/InvestmentContext.jsx`:
-
-```javascript
-export const INVESTMENT_CONFIG = {
-  OLD_KEKE_WEEKLY: 75000,      // Weekly return for original kekes
-  OLD_KEKE_DURATION: 75,        // Weeks for original kekes
-  NEW_KEKE_COST: 5000000,       // Cost of new keke
-  NEW_KEKE_WEEKLY: 125000,      // Weekly return for new kekes
-  NEW_KEKE_DURATION: 52,        // Weeks for new kekes
-  START_KEKES: 4,               // Starting number of kekes
-  TARGET_KEKES: 12,             // Goal
-  NUM_COLLABORATORS: 4,         // Number of investors
-  START_DATE: new Date('2025-10-20'), // Investment start
-};
 ```
-
-### Add More Holiday Weeks
-
-Edit the `HOLIDAY_WEEK_NUMBERS` array in `InvestmentContext.jsx`:
-
-```javascript
-const HOLIDAY_WEEK_NUMBERS = [10, 11, 62, 63, 114, 115];
-// Add more week numbers as needed
+src/
+├── config/
+│   ├── firebase.js        # Firebase connection (ADD YOUR CONFIG)
+│   └── investment.js       # All financial constants (single source of truth)
+├── contexts/
+│   ├── AuthContext.jsx      # Authentication + user profiles
+│   └── TransferContext.jsx  # Transfers, verification, purchases, notifications
+├── components/
+│   ├── Login.jsx            # Sign in / sign up
+│   ├── Dashboard.jsx        # Main layout
+│   ├── BeneficiaryCard.jsx  # Current beneficiary + progress + bank details
+│   ├── TransferForm.jsx     # Log a transfer modal
+│   ├── TransferHistory.jsx  # List of all transfers with statuses
+│   ├── AdminVerification.jsx # Admin panel to approve/reject
+│   ├── RotationTimeline.jsx # Keke ownership timeline
+│   ├── WeeklyStatus.jsx     # Current week info + income breakdown
+│   └── Notifications.jsx    # Bell icon + notification dropdown
+├── App.jsx
+├── main.jsx
+└── index.css
 ```
-
----
-
-## 🛠️ Tech Stack
-
-- **React 18** - UI Framework
-- **Vite** - Build Tool
-- **Firebase Auth** - Authentication
-- **Firestore** - Real-time Database
-- **Tailwind CSS** - Styling
-- **Lucide React** - Icons
-- **React Router** - Navigation
-
----
-
-## 📱 Mobile Support
-
-The dashboard is fully responsive and works great on:
-- 📱 Mobile phones
-- 📱 Tablets
-- 💻 Laptops
-- 🖥️ Desktops
-
----
-
-## 🔒 Security Notes
-
-1. **Never share** your Firebase config publicly (it's okay in frontend, but don't expose service account keys)
-2. **Firestore Rules** ensure only authenticated users can access data
-3. **Email/Password auth** is secure when users choose strong passwords
-4. Consider enabling **App Check** for production
-
----
-
-## 🆘 Troubleshooting
-
-### "Firebase App not initialized"
-- Check that your `firebaseConfig` values are correct
-- Ensure you copied ALL values including quotes
-
-### "Permission denied" error
-- Make sure Firestore rules are published
-- User must be logged in
-
-### Blank screen after deploy
-- Check browser console for errors
-- Verify build completed without errors
-- Ensure `dist` folder contains `index.html`
-
-### Data not syncing
-- Check internet connection
-- Verify Firestore database is active
-- Check Firebase Console for quota limits
-
----
-
-## 📞 Support
-
-If you encounter issues:
-1. Check browser console (F12) for errors
-2. Verify Firebase configuration
-3. Ensure all dependencies are installed
-
----
-
-## 📄 License
-
-Private - For Keke Investment Collaborators Only
-
----
-
-Made with 💚 for successful investments!

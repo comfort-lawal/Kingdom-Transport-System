@@ -1,34 +1,32 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
-import { InvestmentProvider } from './contexts/InvestmentContext';
-import Login from './components/Login';
-import Signup from './components/Signup';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { TransferProvider } from './contexts/TransferContext';
 import Dashboard from './components/Dashboard';
-import ProtectedRoute from './components/ProtectedRoute';
+import Login from './components/Login';
 
-function App() {
+function AppContent() {
+  const { currentUser, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-kingdom-green border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!currentUser) return <Login />;
+
   return (
-    <Router>
-      <AuthProvider>
-        <InvestmentProvider>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route 
-              path="/dashboard" 
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } 
-            />
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        </InvestmentProvider>
-      </AuthProvider>
-    </Router>
+    <TransferProvider>
+      <Dashboard />
+    </TransferProvider>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
+}
