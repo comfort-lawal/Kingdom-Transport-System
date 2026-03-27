@@ -14,10 +14,3 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-```
-
-**Step 3 — Save** (Cmd + S) and close TextEdit.
-
-**Step 4 — Rebuild:**
-```
-npm run build
