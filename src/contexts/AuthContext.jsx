@@ -12,8 +12,17 @@ import { auth, db } from '../config/firebase';
 const AuthContext = createContext();
 export function useAuth() { return useContext(AuthContext); }
 
-// Admin email — A.S.O
+// Admin email — Dr. Itunu
 const ADMIN_EMAIL = 'oluwaselawal@gmail.com';
+
+// Only these emails can sign up
+const ALLOWED_EMAILS = [
+  'oluwaselawal@gmail.com',   // Dr. Itunu (Admin)
+  'oluseunolubajo@gmail.com', // A.S.O
+  'dayoodukoya@gmail.com',    // Dr. Dayo
+  'adefade23@gmail.com',      // Dr. Fadeke
+  'olakidare1@gmail.com',     // A.S.O's partner
+];
 
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
@@ -23,12 +32,16 @@ export function AuthProvider({ children }) {
   const isAdmin = currentUser?.email === ADMIN_EMAIL;
 
   async function signup(email, password, displayName) {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!ALLOWED_EMAILS.includes(normalizedEmail)) {
+      throw new Error('This email is not authorized. Please contact the admin.');
+    }
     const result = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(result.user, { displayName });
     await setDoc(doc(db, 'users', result.user.uid), {
       displayName,
-      email,
-      role: email === ADMIN_EMAIL ? 'admin' : 'collaborator',
+      email: normalizedEmail,
+      role: normalizedEmail === ADMIN_EMAIL ? 'admin' : 'collaborator',
       createdAt: new Date().toISOString(),
     });
     return result;
